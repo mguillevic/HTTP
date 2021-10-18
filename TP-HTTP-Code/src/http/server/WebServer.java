@@ -26,7 +26,8 @@ import java.util.LinkedList;
  * @version 1.0
  */
 public class WebServer {
-
+	
+	protected PrintWriter out;
   /**
    * WebServer constructor.
    */
@@ -45,6 +46,7 @@ public class WebServer {
 
     System.out.println("Waiting for connection");
     for (;;) {
+    	out = null;
       try {
         // wait for a connection
         Socket remote = s.accept();
@@ -52,7 +54,7 @@ public class WebServer {
         System.out.println("Connection, sending data.");
         BufferedReader in = new BufferedReader(new InputStreamReader(
             remote.getInputStream()));
-        PrintWriter out = new PrintWriter(remote.getOutputStream());
+        out = new PrintWriter(remote.getOutputStream());
 
         // read the data sent. We basically ignore it,
         // stop reading once a blank line is hit. This
@@ -63,35 +65,22 @@ public class WebServer {
         String [] line = str.split(" ");
         switch(line[0]){
         	case ("GET"):
-        		doGet(line[1],out);
+        		doGet(line[1]);
         		break;
         	case ("POST"):
-        		while(str!=null && !str.equals("")) {
-        			str=in.readLine();
-            		System.out.println(str);
-        		}
-        		str=in.readLine();//Boundary
-        		
-        		LinkedList<String> reponses=new LinkedList<String>();
-	        	while(str.charAt(str.length()-1)!='-') {
-	    			str=in.readLine();//nom
-	    			reponses.add(str);
-	    			str=in.readLine();//vide
-	    			str=in.readLine();//Marie
-	    			reponses.add(str);
-	    			str=in.readLine();//boundary
-	    		}
-	        	doPost(reponses,out);        		
+        		doPost(in);
         		break;
         	case ("HEAD"):
-	        	doHead(out);        		
+	        	doHead(line[1]);        		
         		break;
         	default:
+        		ReturnCode.sendHeader("501", out);
         		break;        		
         }
         remote.close();
       } catch (Exception e) {
-        System.out.println("Error: " + e);
+    	  ReturnCode.sendHeader("500", out);
+    	  System.out.println("Error: " + e);
       }
     }
   }
@@ -118,52 +107,62 @@ public class WebServer {
   
 	
 
-  public void doGet(String ressource, PrintWriter out) throws IOException{
+  public void doGet(String ressource) throws IOException{
 	  
-	  File file = new File("doc/"+ressource);
-	  if(file.exists()) {
-		  ReturnCode.sendHeader("200", out);
-	      // this blank line signals the end of the headers
-	      out.println("");
-	      
-	      // Send the HTML page
-	      String html_page = getFileAsString("doc/"+ressource);  //Loads the whole html page into one String buffer
-	      out.println(html_page);
+	  System.out.println(ressource);
+	  if(ressource.equals("/privatePage.html")) {
+		  ReturnCode.sendHeader("403", out);
 	  }else {
-		  ReturnCode.sendHeader("404", out);
+		  File file = new File("doc/"+ressource);
+		  if(file.exists()) {
+			  ReturnCode.sendHeader("200", out);
+		      
+		      // Send the HTML page
+		      String html_page = getFileAsString("doc/"+ressource);  //Loads the whole html page into one String buffer
+		      out.println(html_page);
+		  }else {
+			  ReturnCode.sendHeader("404", out);
+		  }
 	  }
-	
-     
       out.flush();
 		
 	}
   
-  public void doHead(PrintWriter out){
-		// Send the headers
-	    out.println("HTTP/1.0 200 OK");
-	    out.println("Connection: keep-alive");
-	    out.println("Content-Type: text/html");
-	    out.println("Transfer-Encoding: chunked");
-	    out.println("Server: Bot");
-	    // this blank line signals the end of the headers
-	    out.println("");  	
-	    
+  public void doHead(String ressource){
+	  	File file = new File("doc/"+ressource);
+	  	if(file.exists()) {
+	  		ReturnCode.sendHeader("200", out);
+	  	}else {
+	  		ReturnCode.sendHeader("404", out);
+	  	}
 	    out.flush();
 	}
   
-  public void doPost(LinkedList<String> reponses, PrintWriter out){
-		// Send the headers
-    out.println("HTTP/1.0 200 OK");
-    out.println("Connection: keep-alive");
-    out.println("Content-Type: text/html");
-    out.println("Transfer-Encoding: chunked");
-    out.println("Server: Bot");
-    // this blank line signals the end of the headers
-    out.println("");
-    
-    // Affiche les donn�es recues
-    System.out.println(reponses);
-    out.flush();
+  public void doPost(BufferedReader in){
+	  String str=".";
+	  try {
+		  while(str!=null && !str.equals("")) {
+				str=in.readLine();
+	  		System.out.println(str);
+			}
+			str=in.readLine();//Boundary
+			
+			LinkedList<String> reponses=new LinkedList<String>();
+	  	while(str.charAt(str.length()-1)!='-') {
+				str=in.readLine();//nom
+				reponses.add(str);
+				str=in.readLine();//vide
+				str=in.readLine();//Marie
+				reponses.add(str);
+				str=in.readLine();//boundary
+			}
+	  	System.out.println(reponses);
+	  	ReturnCode.sendHeader("200", out);
+	  }catch(IOException e) {
+		  e.printStackTrace();
+		  ReturnCode.sendHeader("500", out);
+	  }
+      out.flush();
 		
 	}
   
