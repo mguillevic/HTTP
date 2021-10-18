@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -70,8 +71,17 @@ public class WebServer {
         	case ("POST"):
         		doPost(in);
         		break;
+        		
+        	case ("PUT"):
+        		doPut(line[1],in);
+        		break;
+        		
         	case ("HEAD"):
 	        	doHead(line[1]);        		
+        		break;
+        		
+        	case ("DELETE"):
+        		doDelete(line[1]);
         		break;
         	default:
         		ReturnCode.sendHeader("501", out);
@@ -84,8 +94,36 @@ public class WebServer {
       }
     }
   }
-  
-  private String getFileAsString(String ressource) throws IOException{
+
+private void doPut(String fileName, BufferedReader in) {
+	if(!fileName.equals("/privatePage.html")) {
+		try {
+			String ligne=".";
+			while(ligne!=null && !ligne.equals("")) {
+				ligne=in.readLine();    //We ignore the headers
+			}
+			
+			String buffer="";
+			ligne=".";
+			while(ligne!=null && !ligne.equals("")) {
+				ligne=in.readLine();  //We copy the request body
+				buffer+=ligne;
+			}
+			FileWriter writer = new FileWriter("doc/"+fileName);
+			writer.write(buffer);
+			writer.close();
+			
+			ReturnCode.sendHeader("201",out);
+		}catch(IOException ioe) {
+			ioe.printStackTrace();
+			ReturnCode.sendHeader("500", out);
+		}
+	}else {
+		ReturnCode.sendHeader("403", out);
+	}
+}
+
+private String getFileAsString(String ressource) throws IOException{
 	  File file = new File(ressource);
 	  String buffer="";
 	  String ligne;
@@ -109,7 +147,6 @@ public class WebServer {
 
   public void doGet(String ressource) throws IOException{
 	  
-	  System.out.println(ressource);
 	  if(ressource.equals("/privatePage.html")) {
 		  ReturnCode.sendHeader("403", out);
 	  }else {
@@ -129,12 +166,16 @@ public class WebServer {
 	}
   
   public void doHead(String ressource){
-	  	File file = new File("doc/"+ressource);
-	  	if(file.exists()) {
-	  		ReturnCode.sendHeader("200", out);
-	  	}else {
-	  		ReturnCode.sendHeader("404", out);
-	  	}
+	  if(ressource.equals("/privatePage.html")) {
+		  ReturnCode.sendHeader("403", out);
+	  }else {
+		  File file = new File("doc/"+ressource);
+		  if(file.exists()) {
+		  	ReturnCode.sendHeader("200", out);
+		  }else {
+		  	ReturnCode.sendHeader("404", out);
+		  }
+	  }
 	    out.flush();
 	}
   
@@ -165,6 +206,24 @@ public class WebServer {
       out.flush();
 		
 	}
+  
+  private void doDelete(String ressource) {
+	  if(ressource.equals("/privatePage.html")) {
+		  ReturnCode.sendHeader("403", out);
+	  }else {
+		  File file = new File("doc/"+ressource);
+		  if(file.exists()) {
+			if(file.delete()) {
+				ReturnCode.sendHeader("200", out);
+			}else {
+				ReturnCode.sendHeader("500", out);
+			}
+		  }else {
+			  ReturnCode.sendHeader("404", out);
+		  }
+	  }
+	  out.flush();
+  	}
   
   public String setType(String format,String path) throws IOException {
 	  

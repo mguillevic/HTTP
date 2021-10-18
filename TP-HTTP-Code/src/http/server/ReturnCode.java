@@ -14,6 +14,8 @@ public class ReturnCode {
 		    out.println("Transfer-Encoding: chunked");
 		    out.println("Server: Bot");
 		    break;
+		case "201":
+			out.println("HTTP/1.0 201 Created");
 		case "400":
 			out.println("HTTP/1.0 400 Bad Request");
 			break;
