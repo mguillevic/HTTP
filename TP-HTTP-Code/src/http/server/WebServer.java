@@ -63,7 +63,7 @@ public class WebServer {
         String [] line = str.split(" ");
         switch(line[0]){
         	case ("GET"):
-        		doGet(line[1],out);
+        		doGet(line[1],out,remote);
         		break;
         	case ("POST"):
         		while(str!=null && !str.equals("")) {
@@ -97,7 +97,8 @@ public class WebServer {
   }
   
   private String getFileAsString(String ressource) throws IOException{
-	  File file = new File(ressource);
+	  File file = new File("doc"+ressource);
+	  System.out.println(file.toPath());
 	  String buffer="";
 	  String ligne;
 	  try{
@@ -114,29 +115,30 @@ public class WebServer {
 	  return buffer;
   }
   
- 
+  private byte[] getFileAsBytes(String ressource) throws IOException{
+	  File file = new File("doc"+ressource);
+	  byte[] bytes = Files.readAllBytes(file.toPath());	  
+	  return bytes;
+  }
   
 	
 
-  public void doGet(String ressource, PrintWriter out) throws IOException{
+  public void doGet(String ressource, PrintWriter out, Socket remote) throws IOException{
 		// Send the headers
       out.println("HTTP/1.0 200 OK");
       out.println("Connection: keep-alive");
       File file = new File("doc/"+ressource);
       String format = Files.probeContentType(file.toPath());
-      out.println("Content-Type: text/html");
+      out.println("Content-Type: "+format);
       out.println("Transfer-Encoding: chunked");
       out.println("Server: Bot");
       // this blank line signals the end of the headers
       out.println("");
-      
-      // Send the HTML page
-      
-      //String html_page = getFileAsString(ressource);  //Loads the whole html page into one String buffer
-     
-      out.write(setType(format,ressource));
-     
       out.flush();
+      // Send the HTML page
+      remote.getOutputStream().write(getFileAsBytes(ressource));
+     
+      remote.getOutputStream().flush();
 		
 	}
   
