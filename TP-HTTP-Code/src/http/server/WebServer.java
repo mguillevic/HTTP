@@ -119,22 +119,20 @@ public class WebServer {
 	
 
   public void doGet(String ressource, PrintWriter out) throws IOException{
-		// Send the headers
-      out.println("HTTP/1.0 200 OK");
-      out.println("Connection: keep-alive");
-      File file = new File("doc/"+ressource);
-      String format = Files.probeContentType(file.toPath());
-      out.println("Content-Type: text/html");
-      out.println("Transfer-Encoding: chunked");
-      out.println("Server: Bot");
-      // this blank line signals the end of the headers
-      out.println("");
-      
-      // Send the HTML page
-      
-      //String html_page = getFileAsString(ressource);  //Loads the whole html page into one String buffer
-     
-      out.write(setType(format,ressource));
+	  
+	  File file = new File("doc/"+ressource);
+	  if(file.exists()) {
+		  ReturnCode.sendHeader("200", out);
+	      // this blank line signals the end of the headers
+	      out.println("");
+	      
+	      // Send the HTML page
+	      String html_page = getFileAsString("doc/"+ressource);  //Loads the whole html page into one String buffer
+	      out.println(html_page);
+	  }else {
+		  ReturnCode.sendHeader("404", out);
+	  }
+	
      
       out.flush();
 		
@@ -163,7 +161,7 @@ public class WebServer {
     // this blank line signals the end of the headers
     out.println("");
     
-    // Affiche les données recues
+    // Affiche les donnï¿½es recues
     System.out.println(reponses);
     out.flush();
 		
