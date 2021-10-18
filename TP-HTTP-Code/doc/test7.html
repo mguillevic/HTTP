@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Educat'IF - Test 7</title>
+    </head>
+    <body>
+        <h1>Test 7 &ndash; Navigation vers une autre Page</h1>
+        <h2>En suivant un Lien</h2>
+        <ul>
+            <li>
+                <a href="./test7-suite-lien.html">Aller vers la suite</a>
+            </li>
+            <li>
+                <a href="./test7.html">Rester ici</a>
+            </li>
+            <li>
+                <a href="https://if.insa-lyon.fr/">Site Web du Département IF</a>
+            </li>
+            <li>
+                À lire: <a href="https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/">article intéressant sur Unicode</a> (en anglais)
+            </li>
+        </ul>
+        <h2>En soumettant un Formulaire</h2>
+        <div>
+            <form action="./test7-suite-formulaire.html" method="GET">
+                Comment vous appelez-vous ? <input type="text" name="nom" placeholder="Prénom NOM">
+                <br/>
+                Quel âge avez-vous ? <input type="number" name="age" value="18">
+                <br/>
+                <button>Envoyer mes réponses</button>
+            </form>
+        </div>
+        <h2>En utilisant JavaScript</h2>
+        <p>
+            Cliquer sur le bouton suivant pour aller à la page suivante
+            <button onclick="if (document.getElementById('checkbox-test').checked) { window.location='./test7-suite-javascript.html'; } else { alert('N\'oubliez pas de cocher la case ! ;-)'); }">Cliquer ici !</button>
+            <input type="checkbox" id="checkbox-test" title="Case surprise...">
+        </p>
+        <p>
+            Cliquer sur le bouton suivant pour aller à la page suivante dans 5 secondes
+            <button onclick="setTimeout( function() { window.location='./test7-suite-javascript.html'; }, 5000);">Cliquer ici, puis attendre...</button>
+        </p>
+    </body>
+</html>
