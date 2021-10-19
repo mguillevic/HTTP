@@ -4,13 +4,13 @@ import java.io.PrintWriter;
 
 public class ReturnCode {
 	
-	public static void sendHeader(String returnCode,PrintWriter out) {
+	public static void sendHeader(String returnCode,PrintWriter out,String content_type) {
 		String buffer="";
 		switch(returnCode) {
 		case "200":
 			out.println("HTTP/1.0 200 OK");
 		    out.println("Connection: keep-alive");
-		    out.println("Content-Type: text/html");
+		    out.println("Content-Type: "+content_type);
 		    out.println("Transfer-Encoding: chunked");
 		    out.println("Server: Bot");
 		    break;
@@ -39,5 +39,6 @@ public class ReturnCode {
 		default:
 		}
 		out.println("");
+		out.flush();
 	}
 }

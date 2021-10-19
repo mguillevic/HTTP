@@ -4,7 +4,6 @@ package http.server;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -84,12 +83,12 @@ public class WebServer {
         		doDelete(line[1]);
         		break;
         	default:
-        		ReturnCode.sendHeader("501", out);
+        		ReturnCode.sendHeader("501", out,null);
         		break;        		
         }
         remote.close();
       } catch (Exception e) {
-    	  ReturnCode.sendHeader("500", out);
+    	  ReturnCode.sendHeader("500", out,null);
     	  System.out.println("Error: " + e);
       }
     }
@@ -109,17 +108,18 @@ private void doPut(String fileName, BufferedReader in) {
 				ligne=in.readLine();  //We copy the request body
 				buffer+=ligne;
 			}
-			FileWriter writer = new FileWriter("doc/"+fileName);
+			File file = new File("doc/"+fileName);
+			FileWriter writer = new FileWriter(file);
 			writer.write(buffer);
 			writer.close();
-			
-			ReturnCode.sendHeader("201",out);
+			String format = Files.probeContentType(file.toPath());
+			ReturnCode.sendHeader("201",out,format);
 		}catch(IOException ioe) {
 			ioe.printStackTrace();
-			ReturnCode.sendHeader("500", out);
+			ReturnCode.sendHeader("500", out,null);
 		}
 	}else {
-		ReturnCode.sendHeader("403", out);
+		ReturnCode.sendHeader("403", out,null);
 	}
 }
   
@@ -150,33 +150,40 @@ private void doPut(String fileName, BufferedReader in) {
   
 	
 
-  public void doGet(String ressource) throws IOException{
+  public void doGet(String ressource, Socket remote) throws IOException{
 	  
 	  if(ressource.equals("/privatePage.html")) {
-		  ReturnCode.sendHeader("403", out);
+		  ReturnCode.sendHeader("403", out, null);
 	  }else {
 		  File file = new File("doc/"+ressource);
 		  if(file.exists()) {
-			  ReturnCode.sendHeader("200", out);
 		    String format = Files.probeContentType(file.toPath());
-        out.println("Content-Type: "+format);
-		    out.flush();
-        remote.getOutputStream().write(getFileAsBytes(ressource));
-        remote.getOutputStream().flush();
+		    ReturnCode.sendHeader("200", out,format);
+		    remote.getOutputStream().write(getFileAsBytes("doc/"+ressource));
+		    remote.getOutputStream().flush();
 		  }else {
-			  ReturnCode.sendHeader("404", out);
+			  ReturnCode.sendHeader("404", out,null);
 		  }
 	  }
+  }
   
   public void doHead(String ressource){
 	  if(ressource.equals("/privatePage.html")) {
-		  ReturnCode.sendHeader("403", out);
+		  ReturnCode.sendHeader("403", out,null);
 	  }else {
 		  File file = new File("doc/"+ressource);
 		  if(file.exists()) {
-		  	ReturnCode.sendHeader("200", out);
+			String format;
+			try {
+				format = Files.probeContentType(file.toPath());
+				ReturnCode.sendHeader("200", out,format);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				ReturnCode.sendHeader("500", out,null);
+			}
 		  }else {
-		  	ReturnCode.sendHeader("404", out);
+		  	ReturnCode.sendHeader("404", out,null);
 		  }
 	  }
 	    out.flush();
@@ -201,10 +208,10 @@ private void doPut(String fileName, BufferedReader in) {
 				str=in.readLine();//boundary
 			}
 	  	System.out.println(reponses);
-	  	ReturnCode.sendHeader("200", out);
+	  	ReturnCode.sendHeader("200", out,null);
 	  }catch(IOException e) {
 		  e.printStackTrace();
-		  ReturnCode.sendHeader("500", out);
+		  ReturnCode.sendHeader("500", out,null);
 	  }
       out.flush();
 		
@@ -212,17 +219,17 @@ private void doPut(String fileName, BufferedReader in) {
   
   private void doDelete(String ressource) {
 	  if(ressource.equals("/privatePage.html")) {
-		  ReturnCode.sendHeader("403", out);
+		  ReturnCode.sendHeader("403", out,null);
 	  }else {
 		  File file = new File("doc/"+ressource);
 		  if(file.exists()) {
 			if(file.delete()) {
-				ReturnCode.sendHeader("200", out);
+				ReturnCode.sendHeader("200", out,null);
 			}else {
-				ReturnCode.sendHeader("500", out);
+				ReturnCode.sendHeader("500", out,null);
 			}
 		  }else {
-			  ReturnCode.sendHeader("404", out);
+			  ReturnCode.sendHeader("404", out,null);
 		  }
 	  }
 	  out.flush();
