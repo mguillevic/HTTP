@@ -15,6 +15,10 @@ public class ReturnCode {
 		    break;
 		case "201":
 			out.println("HTTP/1.0 201 Created");
+		    out.println("Connection: keep-alive");
+		    out.println("Content-Type: "+content_type);
+		    out.println("Transfer-Encoding: chunked");
+		    out.println("Server: Bot");
 		case "400":
 			out.println("HTTP/1.0 400 Bad Request");
 			break;

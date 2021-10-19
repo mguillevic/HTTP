@@ -95,26 +95,20 @@ private void doPut(String fileName, BufferedReader in) {
 	if(!fileName.equals("/privatePage.html")) {
 		try {
 			String ligne=".";
+			int i = 0;
+			String length="";
 			while(ligne!=null && !ligne.equals("")) {
-				ligne=in.readLine();    //We ignore the headers
+				length = ligne;
+				ligne=in.readLine();
+				//We ignore the headers
 			}
-			
 			File file = new File("doc/"+fileName);
-			String format = Files.probeContentType(file.toPath());  //get the extension
-			if(format==null) {
-				ReturnCode.sendHeader("415", out, null); //Unsupported format
-			}else {
-				String buffer="";
-				ligne=".";
-				while(ligne!=null && !ligne.equals("")) {
-					ligne=in.readLine();  //We copy the request body
-					buffer+=ligne;
-				}
-				FileWriter writer = new FileWriter(file);
-				writer.write(buffer);
-				writer.close();
-				ReturnCode.sendHeader("201",out,null);
-			}
+			FileWriter writer = new FileWriter(file);
+			String format = Files.probeContentType(file.toPath());
+			ReturnCode.sendHeader("201",out,format);
+			String buffer=in.readLine();
+			writer.write(buffer);
+			writer.close();
 		}catch(IOException ioe) {
 			ioe.printStackTrace();
 			ReturnCode.sendHeader("500", out,null);
