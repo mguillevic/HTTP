@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -26,7 +27,8 @@ import java.util.LinkedList;
  * @version 1.0
  */
 public class WebServer {
-
+	
+	protected PrintWriter out;
   /**
    * WebServer constructor.
    */
@@ -45,6 +47,7 @@ public class WebServer {
 
     System.out.println("Waiting for connection");
     for (;;) {
+    	out = null;
       try {
         // wait for a connection
         Socket remote = s.accept();
@@ -52,7 +55,7 @@ public class WebServer {
         System.out.println("Connection, sending data.");
         BufferedReader in = new BufferedReader(new InputStreamReader(
             remote.getInputStream()));
-        PrintWriter out = new PrintWriter(remote.getOutputStream());
+        out = new PrintWriter(remote.getOutputStream());
 
         // read the data sent. We basically ignore it,
         // stop reading once a blank line is hit. This
@@ -63,41 +66,65 @@ public class WebServer {
         String [] line = str.split(" ");
         switch(line[0]){
         	case ("GET"):
-        		doGet(line[1],out,remote);
+        		doGet(line[1],remote);
         		break;
         	case ("POST"):
-        		while(str!=null && !str.equals("")) {
-        			str=in.readLine();
-            		System.out.println(str);
-        		}
-        		str=in.readLine();//Boundary
-        		
-        		LinkedList<String> reponses=new LinkedList<String>();
-	        	while(str.charAt(str.length()-1)!='-') {
-	    			str=in.readLine();//nom
-	    			reponses.add(str);
-	    			str=in.readLine();//vide
-	    			str=in.readLine();//Marie
-	    			reponses.add(str);
-	    			str=in.readLine();//boundary
-	    		}
-	        	doPost(reponses,out);        		
+        		doPost(in);
         		break;
+        		
+        	case ("PUT"):
+        		doPut(line[1],in);
+        		break;
+        		
         	case ("HEAD"):
-	        	doHead(out);        		
+	        	doHead(line[1]);        		
+        		break;
+        		
+        	case ("DELETE"):
+        		doDelete(line[1]);
         		break;
         	default:
+        		ReturnCode.sendHeader("501", out);
         		break;        		
         }
         remote.close();
       } catch (Exception e) {
-        System.out.println("Error: " + e);
+    	  ReturnCode.sendHeader("500", out);
+    	  System.out.println("Error: " + e);
       }
     }
   }
+
+private void doPut(String fileName, BufferedReader in) {
+	if(!fileName.equals("/privatePage.html")) {
+		try {
+			String ligne=".";
+			while(ligne!=null && !ligne.equals("")) {
+				ligne=in.readLine();    //We ignore the headers
+			}
+			
+			String buffer="";
+			ligne=".";
+			while(ligne!=null && !ligne.equals("")) {
+				ligne=in.readLine();  //We copy the request body
+				buffer+=ligne;
+			}
+			FileWriter writer = new FileWriter("doc/"+fileName);
+			writer.write(buffer);
+			writer.close();
+			
+			ReturnCode.sendHeader("201",out);
+		}catch(IOException ioe) {
+			ioe.printStackTrace();
+			ReturnCode.sendHeader("500", out);
+		}
+	}else {
+		ReturnCode.sendHeader("403", out);
+	}
+}
   
-  private String getFileAsString(String ressource) throws IOException{
-	  File file = new File("doc"+ressource);
+   private String getFileAsString(String ressource) throws IOException{
+	  File file = new File(ressource);
 	  System.out.println(file.toPath());
 	  String buffer="";
 	  String ligne;
@@ -116,60 +143,90 @@ public class WebServer {
   }
   
   private byte[] getFileAsBytes(String ressource) throws IOException{
-	  File file = new File("doc"+ressource);
+	  File file = new File(ressource);
 	  byte[] bytes = Files.readAllBytes(file.toPath());	  
 	  return bytes;
   }
   
 	
 
-  public void doGet(String ressource, PrintWriter out, Socket remote) throws IOException{
-		// Send the headers
-      out.println("HTTP/1.0 200 OK");
-      out.println("Connection: keep-alive");
-      File file = new File("doc/"+ressource);
-      String format = Files.probeContentType(file.toPath());
-      out.println("Content-Type: "+format);
-      out.println("Transfer-Encoding: chunked");
-      out.println("Server: Bot");
-      // this blank line signals the end of the headers
-      out.println("");
-      out.flush();
-      // Send the HTML page
-      remote.getOutputStream().write(getFileAsBytes(ressource));
-     
-      remote.getOutputStream().flush();
-		
-	}
+  public void doGet(String ressource) throws IOException{
+	  
+	  if(ressource.equals("/privatePage.html")) {
+		  ReturnCode.sendHeader("403", out);
+	  }else {
+		  File file = new File("doc/"+ressource);
+		  if(file.exists()) {
+			  ReturnCode.sendHeader("200", out);
+		    String format = Files.probeContentType(file.toPath());
+        out.println("Content-Type: "+format);
+		    out.flush();
+        remote.getOutputStream().write(getFileAsBytes(ressource));
+        remote.getOutputStream().flush();
+		  }else {
+			  ReturnCode.sendHeader("404", out);
+		  }
+	  }
   
-  public void doHead(PrintWriter out){
-		// Send the headers
-	    out.println("HTTP/1.0 200 OK");
-	    out.println("Connection: keep-alive");
-	    out.println("Content-Type: text/html");
-	    out.println("Transfer-Encoding: chunked");
-	    out.println("Server: Bot");
-	    // this blank line signals the end of the headers
-	    out.println("");  	
-	    
+  public void doHead(String ressource){
+	  if(ressource.equals("/privatePage.html")) {
+		  ReturnCode.sendHeader("403", out);
+	  }else {
+		  File file = new File("doc/"+ressource);
+		  if(file.exists()) {
+		  	ReturnCode.sendHeader("200", out);
+		  }else {
+		  	ReturnCode.sendHeader("404", out);
+		  }
+	  }
 	    out.flush();
 	}
   
-  public void doPost(LinkedList<String> reponses, PrintWriter out){
-		// Send the headers
-    out.println("HTTP/1.0 200 OK");
-    out.println("Connection: keep-alive");
-    out.println("Content-Type: text/html");
-    out.println("Transfer-Encoding: chunked");
-    out.println("Server: Bot");
-    // this blank line signals the end of the headers
-    out.println("");
-    
-    // Affiche les données recues
-    System.out.println(reponses);
-    out.flush();
+  public void doPost(BufferedReader in){
+	  String str=".";
+	  try {
+		  while(str!=null && !str.equals("")) {
+				str=in.readLine();
+	  		System.out.println(str);
+			}
+			str=in.readLine();//Boundary
+			
+			LinkedList<String> reponses=new LinkedList<String>();
+	  	while(str.charAt(str.length()-1)!='-') {
+				str=in.readLine();//nom
+				reponses.add(str);
+				str=in.readLine();//vide
+				str=in.readLine();//Marie
+				reponses.add(str);
+				str=in.readLine();//boundary
+			}
+	  	System.out.println(reponses);
+	  	ReturnCode.sendHeader("200", out);
+	  }catch(IOException e) {
+		  e.printStackTrace();
+		  ReturnCode.sendHeader("500", out);
+	  }
+      out.flush();
 		
 	}
+  
+  private void doDelete(String ressource) {
+	  if(ressource.equals("/privatePage.html")) {
+		  ReturnCode.sendHeader("403", out);
+	  }else {
+		  File file = new File("doc/"+ressource);
+		  if(file.exists()) {
+			if(file.delete()) {
+				ReturnCode.sendHeader("200", out);
+			}else {
+				ReturnCode.sendHeader("500", out);
+			}
+		  }else {
+			  ReturnCode.sendHeader("404", out);
+		  }
+	  }
+	  out.flush();
+  	}
   
   public String setType(String format,String path) throws IOException {
 	  
