@@ -66,7 +66,7 @@ public class WebServer {
         String [] line = str.split(" ");
         switch(line[0]){
         	case ("GET"):
-        		doGet(line[1]);
+        		doGet(line[1],remote);
         		break;
         	case ("POST"):
         		doPost(in);
@@ -122,9 +122,10 @@ private void doPut(String fileName, BufferedReader in) {
 		ReturnCode.sendHeader("403", out);
 	}
 }
-
-private String getFileAsString(String ressource) throws IOException{
+  
+   private String getFileAsString(String ressource) throws IOException{
 	  File file = new File(ressource);
+	  System.out.println(file.toPath());
 	  String buffer="";
 	  String ligne;
 	  try{
@@ -141,7 +142,11 @@ private String getFileAsString(String ressource) throws IOException{
 	  return buffer;
   }
   
- 
+  private byte[] getFileAsBytes(String ressource) throws IOException{
+	  File file = new File(ressource);
+	  byte[] bytes = Files.readAllBytes(file.toPath());	  
+	  return bytes;
+  }
   
 	
 
@@ -153,17 +158,15 @@ private String getFileAsString(String ressource) throws IOException{
 		  File file = new File("doc/"+ressource);
 		  if(file.exists()) {
 			  ReturnCode.sendHeader("200", out);
-		      
-		      // Send the HTML page
-		      String html_page = getFileAsString("doc/"+ressource);  //Loads the whole html page into one String buffer
-		      out.println(html_page);
+		    String format = Files.probeContentType(file.toPath());
+        out.println("Content-Type: "+format);
+		    out.flush();
+        remote.getOutputStream().write(getFileAsBytes(ressource));
+        remote.getOutputStream().flush();
 		  }else {
 			  ReturnCode.sendHeader("404", out);
 		  }
 	  }
-      out.flush();
-		
-	}
   
   public void doHead(String ressource){
 	  if(ressource.equals("/privatePage.html")) {
