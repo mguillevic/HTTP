@@ -56,16 +56,13 @@ public class WebServer {
             remote.getInputStream()));
         out = new PrintWriter(remote.getOutputStream());
 
-        // read the data sent. We basically ignore it,
-        // stop reading once a blank line is hit. This
-        // blank line signals the end of the client HTTP
-        // headers.
+        // reads the data sent. launches appropriate method depending on the request type
         String str = ".";
         str = in.readLine();
         String [] line = str.split(" ");
         switch(line[0]){
         	case ("GET"):
-        		doGet(line[1],remote);
+        		doGet(line[1],remote);   //line[1] is the name of the requested ressource
         		break;
         	case ("POST"):
         		doPost(in);
@@ -83,12 +80,12 @@ public class WebServer {
         		doDelete(line[1]);
         		break;
         	default:
-        		ReturnCode.sendHeader("501", out,null);
+        		ReturnCode.sendHeader("501", out,null);  //Not implemented
         		break;        		
         }
         remote.close();
       } catch (Exception e) {
-    	  ReturnCode.sendHeader("500", out,null);
+    	  ReturnCode.sendHeader("500", out,null);  //Internal error
     	  System.out.println("Error: " + e);
       }
     }
@@ -102,24 +99,28 @@ private void doPut(String fileName, BufferedReader in) {
 				ligne=in.readLine();    //We ignore the headers
 			}
 			
-			String buffer="";
-			ligne=".";
-			while(ligne!=null && !ligne.equals("")) {
-				ligne=in.readLine();  //We copy the request body
-				buffer+=ligne;
-			}
 			File file = new File("doc/"+fileName);
-			FileWriter writer = new FileWriter(file);
-			writer.write(buffer);
-			writer.close();
-			String format = Files.probeContentType(file.toPath());
-			ReturnCode.sendHeader("201",out,format);
+			String format = Files.probeContentType(file.toPath());  //get the extension
+			if(format==null) {
+				ReturnCode.sendHeader("415", out, null); //Unsupported format
+			}else {
+				String buffer="";
+				ligne=".";
+				while(ligne!=null && !ligne.equals("")) {
+					ligne=in.readLine();  //We copy the request body
+					buffer+=ligne;
+				}
+				FileWriter writer = new FileWriter(file);
+				writer.write(buffer);
+				writer.close();
+				ReturnCode.sendHeader("201",out,null);
+			}
 		}catch(IOException ioe) {
 			ioe.printStackTrace();
 			ReturnCode.sendHeader("500", out,null);
 		}
 	}else {
-		ReturnCode.sendHeader("403", out,null);
+		ReturnCode.sendHeader("403", out,null);  //Forbidden
 	}
 }
   
@@ -199,11 +200,11 @@ private void doPut(String fileName, BufferedReader in) {
 			str=in.readLine();//Boundary
 			
 			LinkedList<String> reponses=new LinkedList<String>();
-	  	while(str.charAt(str.length()-1)!='-') {
-				str=in.readLine();//nom
+	  	while(str.charAt(str.length()-1)!='-') {  //Reads the request body
+				str=in.readLine();//key
 				reponses.add(str);
-				str=in.readLine();//vide
-				str=in.readLine();//Marie
+				str=in.readLine();//empty line
+				str=in.readLine();//value
 				reponses.add(str);
 				str=in.readLine();//boundary
 			}
@@ -235,23 +236,6 @@ private void doPut(String fileName, BufferedReader in) {
 	  out.flush();
   	}
   
-  public String setType(String format,String path) throws IOException {
-	  
-	 String type = format.split("/")[0];
-	  switch(type){
-	  case ("image"):
-		  System.out.println(path);
-		  return "<img src="+path+" alt=\"image\"/>";
-	  case("text"):
-		  return getFileAsString(path);
-	  default:
-		  return null;
-	  }
-	  
-  }
-  
-
-
   /**
    * Start the application.
    * 

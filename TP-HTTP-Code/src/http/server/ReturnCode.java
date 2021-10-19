@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 public class ReturnCode {
 	
 	public static void sendHeader(String returnCode,PrintWriter out,String content_type) {
-		String buffer="";
 		switch(returnCode) {
 		case "200":
 			out.println("HTTP/1.0 200 OK");
