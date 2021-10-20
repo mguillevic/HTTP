@@ -77,8 +77,25 @@ public class WebServer {
         	case ("DELETE"):
         		doDelete(line[1]);
         		break;
-        	default:
+        		
+        	case("CONNECT"):
         		ReturnCode.sendHeader("501", out,null);  //Not implemented
+        		break;
+        	
+        	case("OPTIONS"):
+        		ReturnCode.sendHeader("501", out, null);
+        		break;
+        	
+        	case("TRACE"):
+        		ReturnCode.sendHeader("501", out, null);
+        		break;
+        	
+        	case("PATCH"):
+        		ReturnCode.sendHeader("501", out, null);
+        		break;
+        		
+        	default:
+        		ReturnCode.sendHeader("400", out,null);  //Bad Request
         		break;        		
         }
         remote.close();
