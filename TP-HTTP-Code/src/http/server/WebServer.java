@@ -4,8 +4,6 @@ package http.server;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -95,10 +93,7 @@ private void doPut(String fileName, BufferedReader in) {
 	if(!fileName.equals("/privatePage.html")) {
 		try {
 			String ligne=".";
-			int i = 0;
-			String length="";
 			while(ligne!=null && !ligne.equals("")) {
-				length = ligne;
 				ligne=in.readLine();
 				//We ignore the headers
 			}
@@ -106,8 +101,13 @@ private void doPut(String fileName, BufferedReader in) {
 			FileWriter writer = new FileWriter(file);
 			String format = Files.probeContentType(file.toPath());
 			ReturnCode.sendHeader("201",out,format);
-			String buffer=in.readLine();
-			writer.write(buffer);
+			ligne=".";
+			String buffer="";
+			while(ligne!=null && !ligne.equals("")) {
+				ligne=in.readLine();    //We copy the request body
+				buffer+=in.readLine();
+			}
+			writer.write(buffer);     //Then write it into a file
 			writer.close();
 		}catch(IOException ioe) {
 			ioe.printStackTrace();
@@ -118,33 +118,13 @@ private void doPut(String fileName, BufferedReader in) {
 	}
 }
   
-   private String getFileAsString(String ressource) throws IOException{
-	  File file = new File(ressource);
-	  System.out.println(file.toPath());
-	  String buffer="";
-	  String ligne;
-	  try{
-		  BufferedReader reader = new BufferedReader(new FileReader(file));
-		  while ((ligne = reader.readLine()) != null) {
-	    		buffer+=ligne;  //We add every line of the file to the buffer
-	    	}
-	  	    reader.close();
-	  }catch(FileNotFoundException exc){
-		  exc.printStackTrace();
-	  }catch(IOException ioe){
-			ioe.printStackTrace();
-		}
-	  return buffer;
-  }
-  
   private byte[] getFileAsBytes(String ressource) throws IOException{
 	  File file = new File(ressource);
 	  byte[] bytes = Files.readAllBytes(file.toPath());	  
 	  return bytes;
   }
   
-	
-
+  
   public void doGet(String ressource, Socket remote) throws IOException{
 	  
 	  if(ressource.equals("/privatePage.html")) {
@@ -173,7 +153,6 @@ private void doPut(String fileName, BufferedReader in) {
 				format = Files.probeContentType(file.toPath());
 				ReturnCode.sendHeader("200", out,format);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				ReturnCode.sendHeader("500", out,null);
 			}
