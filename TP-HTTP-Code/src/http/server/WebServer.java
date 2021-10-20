@@ -120,9 +120,11 @@ private void doPut(String fileName, BufferedReader in) {
 			ReturnCode.sendHeader("201",out,format);
 			ligne=".";
 			String buffer="";
+			ligne=in.readLine();  
 			while(ligne!=null && !ligne.equals("")) {
+				buffer+=ligne;
 				ligne=in.readLine();    //We copy the request body
-				buffer+=in.readLine();
+				
 			}
 			writer.write(buffer);     //Then write it into a file
 			writer.close();
