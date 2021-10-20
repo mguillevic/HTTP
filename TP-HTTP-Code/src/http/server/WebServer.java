@@ -32,7 +32,7 @@ public class WebServer {
   protected void start() {
     ServerSocket s;
 
-    System.out.println("Webserver starting up on port 80");
+    System.out.println("Webserver starting up on port 3000");
     System.out.println("(press ctrl-c to exit)");
     try {
       // create the main server socket
@@ -77,8 +77,25 @@ public class WebServer {
         	case ("DELETE"):
         		doDelete(line[1]);
         		break;
-        	default:
+        		
+        	case("CONNECT"):
         		ReturnCode.sendHeader("501", out,null);  //Not implemented
+        		break;
+        	
+        	case("OPTIONS"):
+        		ReturnCode.sendHeader("501", out, null);
+        		break;
+        	
+        	case("TRACE"):
+        		ReturnCode.sendHeader("501", out, null);
+        		break;
+        	
+        	case("PATCH"):
+        		ReturnCode.sendHeader("501", out, null);
+        		break;
+        		
+        	default:
+        		ReturnCode.sendHeader("400", out,null);  //Bad Request
         		break;        		
         }
         remote.close();
